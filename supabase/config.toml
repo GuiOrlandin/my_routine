@@ -1,0 +1,22 @@
+# Supabase local dev config — linked project: ojxtteerhvvfpxgsfrjh
+# Apply migrations: npx supabase db push --db-url "$DATABASE_URL"
+
+project_id = "ojxtteerhvvfpxgsfrjh"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.migrations]
+enabled = true
+
+[db.seed]
+enabled = false

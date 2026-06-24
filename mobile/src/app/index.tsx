@@ -1,17 +1,19 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Button, Container, Text, YContainer } from "@primo-brutality/ui";
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Text>Hello World</Text>
-    </View>
+    <Container centered className="flex-1 bg-brutal-cream px-6">
+      <YContainer gap="md" align="center">
+        <Text size="xl" weight="bold">
+          My Routine
+        </Text>
+        <Text size="sm" color="muted">
+          UI neo-brutalista configurada
+        </Text>
+        <Button variant="primary" onPress={() => {}}>
+          Começar
+        </Button>
+      </YContainer>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

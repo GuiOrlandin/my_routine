@@ -1,1 +1,22 @@
 .env
+application-local.yml
+
+# Maven
+target/
+
+# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Java
+*.class
+*.jar
+*.war
+
+# Python (legado — removido)
+.venv/
+__pycache__/
+*.pyc

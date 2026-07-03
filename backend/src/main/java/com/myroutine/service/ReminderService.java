@@ -2,6 +2,7 @@ package com.myroutine.service;
 
 import com.myroutine.domain.Recurrence;
 import com.myroutine.domain.Reminder;
+import com.myroutine.domain.SavedReminder;
 import com.myroutine.repository.ReminderRepository;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +29,7 @@ public class ReminderService {
     /**
      * Cria lembrete validando regras no construtor de {@link Reminder} (título, data futura, userId).
      */
-    public Reminder createReminder(String title, Instant dueAt, String userId, Recurrence recurrence) {
+    public SavedReminder createReminder(String title, Instant dueAt, String userId, Recurrence recurrence) {
         Reminder reminder = new Reminder(title, dueAt, userId, recurrence);
         return reminderRepository.save(reminder);
     }

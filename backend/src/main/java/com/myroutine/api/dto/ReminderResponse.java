@@ -1,6 +1,7 @@
 package com.myroutine.api.dto;
 
 import com.myroutine.domain.Reminder;
+import com.myroutine.domain.SavedReminder;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -21,6 +22,10 @@ public record ReminderResponse(
         Instant createdAt,
         Instant updatedAt
 ) {
+
+    public static ReminderResponse from(SavedReminder saved) {
+        return from(saved.reminder(), saved.id(), saved.source(), saved.createdAt(), saved.updatedAt());
+    }
 
     public static ReminderResponse from(
             Reminder reminder,

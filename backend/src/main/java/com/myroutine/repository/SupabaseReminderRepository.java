@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.myroutine.domain.Recurrence;
 import com.myroutine.domain.Reminder;
 import com.myroutine.domain.ReminderStatus;
+import com.myroutine.domain.SavedReminder;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Repository;
@@ -39,7 +40,7 @@ public class SupabaseReminderRepository implements ReminderRepository {
     }
 
     @Override
-    public Reminder save(Reminder reminder) {
+    public SavedReminder save(Reminder reminder) {
         ReminderWrite payload = ReminderWrite.fromDomain(reminder);
 
         try {
@@ -51,7 +52,7 @@ public class SupabaseReminderRepository implements ReminderRepository {
                     .bodyToMono(ROW_LIST)
                     .block();
 
-            return toDomain(requireSingleRow(rows, "salvar lembrete"));
+            return toSavedReminder(requireSingleRow(rows, "salvar lembrete"));
         } catch (WebClientResponseException e) {
             throw persistenceError("Falha ao salvar lembrete", e);
         } catch (RuntimeException e) {
@@ -169,12 +170,17 @@ public class SupabaseReminderRepository implements ReminderRepository {
     }
 
     private Reminder toDomain(ReminderRow row) {
-        return Reminder.fromPersistence(
+        return toSavedReminder(row).reminder();
+    }
+
+    private SavedReminder toSavedReminder(ReminderRow row) {
+        Reminder reminder = Reminder.fromPersistence(
                 row.title(),
                 row.dueAt(),
                 row.userId(),
                 Recurrence.fromValue(row.recurrence()),
                 ReminderStatus.fromValue(row.status()));
+        return new SavedReminder(reminder, row.id(), row.source(), row.createdAt(), row.updatedAt());
     }
 
     private ReminderRow requireSingleRow(List<ReminderRow> rows, String operation) {

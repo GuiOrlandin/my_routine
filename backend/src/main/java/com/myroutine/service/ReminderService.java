@@ -1,7 +1,9 @@
 package com.myroutine.service;
 
+import com.myroutine.api.dto.ReminderResponse;
 import com.myroutine.domain.Recurrence;
 import com.myroutine.domain.Reminder;
+import com.myroutine.domain.ReminderFilters;
 import com.myroutine.domain.SavedReminder;
 import com.myroutine.repository.ReminderRepository;
 import org.springframework.stereotype.Service;
@@ -34,8 +36,8 @@ public class ReminderService {
         return reminderRepository.save(reminder);
     }
 
-    public List<Reminder> listReminders(String userId) {
-        return reminderRepository.findByUserId(userId);
+    public List<SavedReminder> listReminders(String userId, ReminderFilters filters) {
+        return reminderRepository.findByUserId(userId, filters);
     }
 
     public Reminder markDone(UUID id, String userId) {

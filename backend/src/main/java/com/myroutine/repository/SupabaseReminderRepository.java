@@ -2,16 +2,15 @@ package com.myroutine.repository;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.myroutine.domain.Recurrence;
-import com.myroutine.domain.Reminder;
-import com.myroutine.domain.ReminderStatus;
-import com.myroutine.domain.SavedReminder;
+import com.myroutine.domain.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriBuilder;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -90,14 +89,10 @@ public class SupabaseReminderRepository implements ReminderRepository {
     }
 
     @Override
-    public List<Reminder> findByUserId(String userId) {
+    public List<SavedReminder> findByUserId(String userId, ReminderFilters filters) {
         try {
             List<ReminderRow> rows = supabaseClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path(TABLE)
-                            .queryParam("user_id", "eq." + userId)
-                            .queryParam("order", "due_at.asc")
-                            .build())
+                    .uri(uriBuilder -> buildListUri(uriBuilder, userId, filters))
                     .retrieve()
                     .bodyToMono(ROW_LIST)
                     .block();
@@ -105,7 +100,7 @@ public class SupabaseReminderRepository implements ReminderRepository {
             if (rows == null) {
                 return List.of();
             }
-            return rows.stream().map(this::toDomain).toList();
+            return rows.stream().map(this::toSavedReminder).toList();
         } catch (WebClientResponseException e) {
             throw persistenceError("Falha ao listar lembretes do usuário", e);
         } catch (RuntimeException e) {
@@ -114,6 +109,31 @@ public class SupabaseReminderRepository implements ReminderRepository {
             }
             throw persistenceError("Falha ao listar lembretes do usuário", e);
         }
+    }
+
+    private URI buildListUri(UriBuilder uriBuilder, String userId, ReminderFilters filters) {
+        var builder = uriBuilder.path(TABLE)
+                .queryParam("user_id", "eq." + userId)
+                .queryParam("order", "due_at.asc");
+
+        if (filters != null) {
+            if(filters.status() != null) {
+                builder.queryParam("status", "eq." + filters.status().getValue());
+            }
+
+            if(filters.source() != null &&  !filters.source().isBlank()) {
+                builder.queryParam("source", "eq." + filters.source());
+            }
+
+            if(filters.from() != null) {
+                builder.queryParam("due_at", "gte." + filters.from());
+            }
+            if(filters.to() != null) {
+                builder.queryParam("due_at", "lte." + filters.from());
+            }
+        }
+
+        return builder.build();
     }
 
     @Override
@@ -239,4 +259,5 @@ public class SupabaseReminderRepository implements ReminderRepository {
             @JsonProperty("created_at") Instant createdAt,
             @JsonProperty("updated_at") Instant updatedAt) {
     }
+
 }

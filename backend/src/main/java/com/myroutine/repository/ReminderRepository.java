@@ -1,6 +1,7 @@
 package com.myroutine.repository;
 
 import com.myroutine.domain.Reminder;
+import com.myroutine.domain.ReminderFilters;
 import com.myroutine.domain.SavedReminder;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public interface ReminderRepository {
 
     Optional<Reminder> findById(UUID id);
 
-    List<Reminder> findByUserId(String userId);
+    List<SavedReminder> findByUserId(String userId, ReminderFilters filters);
 
     Reminder update(UUID id, Reminder reminder);
 

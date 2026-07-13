@@ -129,7 +129,7 @@ public class SupabaseReminderRepository implements ReminderRepository {
                 builder.queryParam("due_at", "gte." + filters.from());
             }
             if(filters.to() != null) {
-                builder.queryParam("due_at", "lte." + filters.from());
+                builder.queryParam("due_at", "lte." + filters.to());
             }
         }
 

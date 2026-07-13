@@ -3,7 +3,6 @@ package com.myroutine.api.controller;
 import com.myroutine.api.dto.CreateReminderRequest;
 import com.myroutine.api.dto.ReminderResponse;
 import com.myroutine.api.security.UserPrincipal;
-import com.myroutine.domain.Reminder;
 import com.myroutine.domain.ReminderFilters;
 import com.myroutine.domain.ReminderStatus;
 import com.myroutine.domain.SavedReminder;
@@ -28,13 +27,16 @@ public class ReminderController {
     }
 
     @GetMapping
-    public List<SavedReminder> getReminders(@AuthenticationPrincipal UserPrincipal user,
-                                            @RequestParam(required = false)ReminderStatus status,
+    public List<ReminderResponse> getReminders(@AuthenticationPrincipal UserPrincipal user,
+                                            @RequestParam(required = false) ReminderStatus status,
                                             @RequestParam(required = false) String source,
-                                            @RequestParam(required = false)Instant from,
-                                            @RequestParam(required = false)Instant to
-                                            ) {
-        return reminderService.listReminders(user.getId(), new ReminderFilters(status, source, from, to));
+                                            @RequestParam(required = false) Instant from,
+                                            @RequestParam(required = false) Instant to) {
+        return reminderService
+                .listReminders(user.getId(), new ReminderFilters(status, source, from, to))
+                .stream()
+                .map(ReminderResponse::from)
+                .toList();
     }
 
     @PostMapping

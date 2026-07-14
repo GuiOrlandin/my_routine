@@ -28,4 +28,9 @@ public interface ReminderRepository {
     SavedReminder update(UUID id, Reminder reminder);
 
     void delete(UUID id);
+
+    /**
+     * Insere ou atualiza lembrete importado do Google usando {@code external_id} + {@code user_id}.
+     */
+    SavedReminder upsertGoogleEvent(Reminder reminder, String externalId);
 }

@@ -9,3 +9,9 @@ supabase:
   url: ${SUPABASE_URL:}
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
   jwt-secret: ${SUPABASE_JWT_SECRET:dev-jwt-secret-minimum-32-characters-for-local}
+
+google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+  client-secret: ${GOOGLE_CLIENT_SECRET:}
+  redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/google/callback}
+  token-encryption-key: ${GOOGLE_TOKEN_ENCRYPTION_KEY:}

@@ -122,3 +122,17 @@ Autenticação JWT fica em `api/security/` — controllers e services **não** v
 | **SRP** | Filtro ≠ controller ≠ service | Cada camada tem uma responsabilidade; JWT não vaza para domínio |
 
 **Fluxo:** request → `JwtAuthFilter` extrai JWT → `UserPrincipal` no `SecurityContext` → controller usa `@AuthenticationPrincipal UserPrincipal user` → service recebe `userId` já confiável. Token inválido ou expirado → HTTP **401** antes de chegar ao controller.
+
+## Conceito: Integração Externa como Classe
+
+APIs externas (Google Calendar, futuramente Alexa/Gmail) ficam em `integration/` — **adapters** com contrato próprio, sem misturar OAuth/HTTP com controllers de lembretes:
+
+| Conceito | Onde aparece | O que faz |
+|----------|--------------|-----------|
+| **Port (ISP)** | `GoogleCalendarPort` | Contrato mínimo: `connect`, `syncEvents` — quem consome não vê a API Google |
+| **Adapter (OCP)** | `GoogleCalendarService implements GoogleCalendarPort` | Troca code→refresh_token, lista eventos 7 dias, upsert com `source=google` |
+| **Criptografia** | `TokenCipher` (AES-256-GCM) | Refresh token só vai para `google_tokens` já cifrado |
+| **Persistência** | `GoogleTokenRepository` + `ReminderRepository.upsertGoogleEvent` | Tokens e lembretes via PostgREST (service role) |
+| **Erro de auth** | `GoogleAuthError` | Token ausente/revogado — o endpoint (T17/T18) traduz em 400/401 |
+
+**Fluxo `connect`:** authorization code → `GoogleAuthorizationCodeTokenRequest` → refresh_token → `TokenCipher.encrypt` → `google_tokens`. **Fluxo `syncEvents`:** descriptografa token → Calendar API `events.list` (agora → +7 dias) → upsert por `external_id` (sem duplicar no re-sync). Token revogado → `GoogleAuthError`.

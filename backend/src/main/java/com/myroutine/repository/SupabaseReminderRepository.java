@@ -189,6 +189,79 @@ public class SupabaseReminderRepository implements ReminderRepository {
         }
     }
 
+    @Override
+    public SavedReminder upsertGoogleEvent(Reminder reminder, String externalId) {
+        if (externalId == null || externalId.isBlank()) {
+            throw new IllegalArgumentException("external_id é obrigatório para eventos Google");
+        }
+
+        try {
+            Optional<UUID> existingId = findIdByUserAndExternalId(reminder.getUserId(), externalId);
+            return existingId
+                    .map(uuid -> updateGoogleEvent(uuid, reminder, externalId))
+                    .orElseGet(() -> insertGoogleEvent(reminder, externalId));
+        } catch (WebClientResponseException e) {
+            throw persistenceError("Falha ao chamar API Google", e);
+        } catch (ReminderPersistenceException | IllegalArgumentException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw persistenceError("Falha inesperada ao upsert lembrete Google", e);
+        }
+    }
+
+    private Optional<UUID> findIdByUserAndExternalId(String userId, String externalId) {
+        List<ReminderRow> rows = supabaseClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(TABLE)
+                        .queryParam("user_id", "eq." + userId)
+                        .queryParam("external_id", "eq." + externalId)
+                        .queryParam("select", "id")
+                        .build())
+                .retrieve()
+                .bodyToMono(ROW_LIST)
+                .block();
+
+        if (rows == null || rows.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(rows.getFirst().id());
+    }
+
+    private SavedReminder insertGoogleEvent(Reminder reminder, String externalId) {
+        GoogleReminderWrite payload = GoogleReminderWrite.fromDomain(reminder, externalId);
+        List<ReminderRow> rows = supabaseClient.post()
+                .uri(TABLE)
+                .header("Prefer", "return=representation")
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(ROW_LIST)
+                .block();
+        return toSavedReminder(requireSingleRow(rows, "inserir lembrete Google"));
+    }
+
+    private SavedReminder updateGoogleEvent(UUID id, Reminder reminder, String externalId) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("title", reminder.getTitle());
+        payload.put("due_at", reminder.getDueAt().toString());
+        payload.put("status", reminder.getStatus().getValue());
+        payload.put("source", "google");
+        payload.put("external_id", externalId);
+        payload.put("recurrence", toDbRecurrence(reminder.getRecurrence()));
+        payload.put("updated_at", Instant.now().toString());
+
+        List<ReminderRow> rows = supabaseClient.patch()
+                .uri(uriBuilder -> uriBuilder
+                        .path(TABLE)
+                        .queryParam("id", "eq." + id)
+                        .build())
+                .header("Prefer", "return=representation")
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(ROW_LIST)
+                .block();
+        return toSavedReminder(requireSingleRow(rows, "atualizar lembrete Google"));
+    }
+
     private Reminder toDomain(ReminderRow row) {
         return toSavedReminder(row).reminder();
     }
@@ -243,6 +316,28 @@ public class SupabaseReminderRepository implements ReminderRepository {
                     reminder.getDueAt().toString(),
                     reminder.getStatus().getValue(),
                     "manual",
+                    toDbRecurrence(reminder.getRecurrence()));
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private record GoogleReminderWrite(
+            @JsonProperty("user_id") String userId,
+            String title,
+            @JsonProperty("due_at") String dueAt,
+            String status,
+            String source,
+            @JsonProperty("external_id") String externalId,
+            String recurrence) {
+
+        static GoogleReminderWrite fromDomain(Reminder reminder, String externalId) {
+            return new GoogleReminderWrite(
+                    reminder.getUserId(),
+                    reminder.getTitle(),
+                    reminder.getDueAt().toString(),
+                    reminder.getStatus().getValue(),
+                    "google",
+                    externalId,
                     toDbRecurrence(reminder.getRecurrence()));
         }
     }

@@ -1,10 +1,8 @@
 package com.myroutine.service;
 
 import com.myroutine.api.dto.ReminderResponse;
-import com.myroutine.domain.Recurrence;
-import com.myroutine.domain.Reminder;
-import com.myroutine.domain.ReminderFilters;
-import com.myroutine.domain.SavedReminder;
+import com.myroutine.api.dto.UpdateReminderRequest;
+import com.myroutine.domain.*;
 import com.myroutine.repository.ReminderRepository;
 import org.springframework.stereotype.Service;
 
@@ -40,12 +38,17 @@ public class ReminderService {
         return reminderRepository.findByUserId(userId, filters);
     }
 
-    public Reminder markDone(UUID id, String userId) {
+    public SavedReminder updateReminder(UUID id, String userId, UpdateReminderRequest request) {
         Reminder reminder = requireOwnedReminder(id, userId);
-        reminder.markDone();
+
+        if (request.status() == ReminderStatus.DONE) {
+            reminder.markDone();
+        } else if (request.dueAt() != null) {
+            reminder.snooze(request.dueAt());
+        }
+
         return reminderRepository.update(id, reminder);
     }
-
     public void deleteReminder(UUID id, String userId) {
         requireOwnedReminder(id, userId);
         reminderRepository.delete(id);

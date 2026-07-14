@@ -137,7 +137,7 @@ public class SupabaseReminderRepository implements ReminderRepository {
     }
 
     @Override
-    public Reminder update(UUID id, Reminder reminder) {
+    public SavedReminder update(UUID id, Reminder reminder) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("title", reminder.getTitle());
         payload.put("due_at", reminder.getDueAt().toString());
@@ -157,7 +157,7 @@ public class SupabaseReminderRepository implements ReminderRepository {
                     .bodyToMono(ROW_LIST)
                     .block();
 
-            return toDomain(requireSingleRow(rows, "atualizar lembrete"));
+            return toSavedReminder(requireSingleRow(rows, "atualizar lembrete"));
         } catch (WebClientResponseException e) {
             throw persistenceError("Falha ao atualizar lembrete", e);
         } catch (RuntimeException e) {

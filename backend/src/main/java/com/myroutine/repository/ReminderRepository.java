@@ -25,7 +25,7 @@ public interface ReminderRepository {
 
     List<SavedReminder> findByUserId(String userId, ReminderFilters filters);
 
-    Reminder update(UUID id, Reminder reminder);
+    SavedReminder update(UUID id, Reminder reminder);
 
     void delete(UUID id);
 }

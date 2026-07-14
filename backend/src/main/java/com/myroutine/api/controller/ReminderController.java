@@ -49,6 +49,14 @@ public class ReminderController {
         return ResponseEntity.status(HttpStatus.OK).body(ReminderResponse.from(updatedReminder));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ReminderResponse> deleteReminder(@PathVariable UUID id, @AuthenticationPrincipal UserPrincipal user) {
+        reminderService.deleteReminder(id, user.getId());
+
+        return  ResponseEntity.noContent().build();
+    }
+
+
 
     @PostMapping
     public ResponseEntity<ReminderResponse> create(

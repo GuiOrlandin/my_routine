@@ -54,6 +54,8 @@ public class ReminderService {
         reminderRepository.delete(id);
     }
 
+
+
     private Reminder requireOwnedReminder(UUID id, String userId) {
         return reminderRepository.findById(id)
                 .filter(reminder -> reminder.getUserId().equals(userId))

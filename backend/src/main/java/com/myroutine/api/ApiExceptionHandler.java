@@ -1,5 +1,6 @@
 package com.myroutine.api;
 
+import com.myroutine.integration.GoogleAuthError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -35,6 +36,19 @@ public class ApiExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Não encontrado");
 
+        return problem;
+    }
+
+    /**
+     * Google ausente/revogado: 400 se ainda não conectou; 401 se precisa reconectar (T17/T18).
+     */
+    @ExceptionHandler(GoogleAuthError.class)
+    public ProblemDetail handleGoogleAuth(GoogleAuthError ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "Falha na autenticação Google";
+        boolean notConnectedYet = message.toLowerCase().contains("conecte sua agenda");
+        HttpStatus status = notConnectedYet ? HttpStatus.BAD_REQUEST : HttpStatus.UNAUTHORIZED;
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, message);
+        problem.setTitle(notConnectedYet ? "Agenda não conectada" : "Autenticação Google");
         return problem;
     }
 }

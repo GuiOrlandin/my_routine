@@ -492,7 +492,7 @@ curl -X POST http://localhost:8080/reminders -H "Authorization: Bearer <token>" 
 
 ---
 
-### T19: Configurar JUnit 5 + testes de domínio
+### T19: Configurar JUnit 5 + testes de domínio — ✅
 
 **What**: Setup JUnit 5 + Mockito e testes unitários para `Reminder` e `ReminderService` (mocks).
 **Where**: `backend/src/test/java/com/myroutine/`
@@ -501,10 +501,10 @@ curl -X POST http://localhost:8080/reminders -H "Authorization: Bearer <token>" 
 **Requirements**: (qualidade — habilita gate automatizado)
 
 **Done when**:
-- [ ] JUnit 5 + Mockito configurados no `pom.xml`
-- [ ] Testes: criar Reminder válido, rejeitar data passada, markDone
-- [ ] Testes: ReminderService com mock repository
-- [ ] `cd backend && mvn test` passa (mínimo 5 testes)
+- [x] JUnit 5 + Mockito configurados no `pom.xml` (`spring-boot-starter-test`)
+- [x] Testes: criar Reminder válido, rejeitar data passada, markDone
+- [x] Testes: ReminderService com mock repository
+- [x] `cd backend && mvn test` passa (mínimo 5 testes) — 19 testes no total
 
 **Tests**: unit
 **Gate**: `cd backend && mvn test`

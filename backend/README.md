@@ -135,4 +135,11 @@ APIs externas (Google Calendar, futuramente Alexa/Gmail) ficam em `integration/`
 | **Persistência** | `GoogleTokenRepository` + `ReminderRepository.upsertGoogleEvent` | Tokens e lembretes via PostgREST (service role) |
 | **Erro de auth** | `GoogleAuthError` | Token ausente/revogado — o endpoint (T17/T18) traduz em 400/401 |
 
-**Fluxo `connect`:** authorization code → `GoogleAuthorizationCodeTokenRequest` → refresh_token → `TokenCipher.encrypt` → `google_tokens`. **Fluxo `syncEvents`:** descriptografa token → Calendar API `events.list` (agora → +7 dias) → upsert por `external_id` (sem duplicar no re-sync). Token revogado → `GoogleAuthError`.
+**Fluxo `connect`:** authorization code → `GoogleAuthorizationCodeTokenRequest` → refresh_token → `TokenCipher.encrypt` → `google_tokens`. **Fluxo `syncEvents`:** `POST /google/sync` → descriptografa token → Calendar API `events.list` (agora → +7 dias) → upsert por `external_id` → `{ "syncedCount": N }`.
+
+**Erros Google (cliente distingue via `ProblemDetail.type`, não só status):**
+| Situação | HTTP | `type` |
+|----------|------|--------|
+| Sem token | **400** | `urn:myroutine:errors:google-not-connected` |
+| Token revogado | **401** | `urn:myroutine:errors:google-reauth` *(≠ logout JWT)* |
+| Falha I/O / sync parcial | **500** | `urn:myroutine:errors:google-sync-failed` — `detail` cita quantos eventos já entraram; não há transação (MVP) |

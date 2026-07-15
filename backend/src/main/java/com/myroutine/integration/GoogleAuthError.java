@@ -1,15 +1,23 @@
 package com.myroutine.integration;
 
 /**
- * Token Google ausente, inválido ou revogado — o cliente deve reconectar a agenda.
+ * Token Google ausente, inválido ou revogado — o cliente deve conectar/reconectar a agenda.
  */
 public class GoogleAuthError extends RuntimeException {
 
-    public GoogleAuthError(String message) {
+    private final GoogleAuthErrorCode code;
+
+    public GoogleAuthError(GoogleAuthErrorCode code, String message) {
         super(message);
+        this.code = code != null ? code : GoogleAuthErrorCode.AUTH_FAILED;
     }
 
-    public GoogleAuthError(String message, Throwable cause) {
+    public GoogleAuthError(GoogleAuthErrorCode code, String message, Throwable cause) {
         super(message, cause);
+        this.code = code != null ? code : GoogleAuthErrorCode.AUTH_FAILED;
+    }
+
+    public GoogleAuthErrorCode getCode() {
+        return code;
     }
 }

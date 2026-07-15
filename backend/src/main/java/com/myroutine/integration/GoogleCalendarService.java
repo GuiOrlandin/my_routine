@@ -14,9 +14,7 @@ import com.google.api.services.calendar.model.Events;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.UserCredentials;
 import com.myroutine.config.GoogleProperties;
-import com.myroutine.domain.Recurrence;
 import com.myroutine.domain.Reminder;
-import com.myroutine.domain.ReminderStatus;
 import com.myroutine.repository.GoogleTokenRepository;
 import com.myroutine.repository.ReminderRepository;
 import org.springframework.stereotype.Service;
@@ -76,6 +74,7 @@ public class GoogleCalendarService implements GoogleCalendarPort {
             String refreshToken = tokenResponse.getRefreshToken();
             if (refreshToken == null || refreshToken.isBlank()) {
                 throw new GoogleAuthError(
+                        GoogleAuthErrorCode.REVOKED,
                         "Google não retornou refresh_token. Reconecte com access_type=offline e prompt=consent.");
             }
 
@@ -95,7 +94,9 @@ public class GoogleCalendarService implements GoogleCalendarPort {
         }
 
         String encrypted = googleTokenRepository.findEncryptedRefreshToken(userId)
-                .orElseThrow(() -> new GoogleAuthError("Conecte sua agenda Google antes de sincronizar"));
+                .orElseThrow(() -> new GoogleAuthError(
+                        GoogleAuthErrorCode.NOT_CONNECTED,
+                        "Conecte sua agenda"));
 
         String refreshToken = tokenCipher.decrypt(encrypted);
         Calendar calendar = buildCalendarClient(refreshToken);
@@ -118,32 +119,36 @@ public class GoogleCalendarService implements GoogleCalendarPort {
             }
 
             int upserted = 0;
-            for (Event event : items) {
-                if (event.getId() == null || event.getId().isBlank()) {
-                    continue;
-                }
-                Instant dueAt = resolveStart(event);
-                if (dueAt == null) {
-                    continue;
-                }
-                String title = event.getSummary();
-                if (title == null || title.isBlank()) {
-                    title = "(Sem título)";
-                }
+            try {
+                for (Event event : items) {
+                    if (event.getId() == null || event.getId().isBlank()) {
+                        continue;
+                    }
+                    Instant dueAt = resolveStart(event);
+                    if (dueAt == null) {
+                        continue;
+                    }
+                    String title = event.getSummary();
+                    if (title == null || title.isBlank()) {
+                        title = "(Sem título)";
+                    }
 
-                Reminder reminder = Reminder.fromPersistence(
-                        title,
-                        dueAt,
-                        userId,
-                        Recurrence.NONE,
-                        ReminderStatus.PENDING);
-                reminderRepository.upsertGoogleEvent(reminder, event.getId());
-                upserted++;
+                    Reminder reminder = new Reminder(title, dueAt, userId);
+                    reminderRepository.upsertGoogleEvent(reminder, event.getId());
+                    upserted++;
+                }
+            } catch (RuntimeException e) {
+                // Sync parcial: eventos já upsertados permanecem; o detail cita a contagem.
+                throw new IllegalStateException(
+                        "Falha ao sincronizar Google Calendar após " + upserted
+                                + " evento(s) importado(s)",
+                        e);
             }
             return upserted;
         } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 401 || e.getStatusCode() == 403) {
                 throw new GoogleAuthError(
+                        GoogleAuthErrorCode.REVOKED,
                         "Token Google revogado ou sem permissão — reconecte sua agenda", e);
             }
             throw new IllegalStateException("Falha ao listar eventos do Google Calendar", e);
@@ -162,7 +167,9 @@ public class GoogleCalendarService implements GoogleCalendarPort {
         try {
             credentials.refreshIfExpired();
         } catch (IOException e) {
-            throw new GoogleAuthError("Token Google revogado — reconecte sua agenda", e);
+            throw new GoogleAuthError(
+                    GoogleAuthErrorCode.REVOKED,
+                    "Token Google revogado — reconecte sua agenda", e);
         }
 
         return new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, new HttpCredentialsAdapter(credentials))
@@ -186,8 +193,13 @@ public class GoogleCalendarService implements GoogleCalendarPort {
     private static GoogleAuthError toAuthError(TokenResponseException e) {
         String detail = e.getDetails() != null ? e.getDetails().getError() : null;
         if ("invalid_grant".equals(detail)) {
-            return new GoogleAuthError("Token Google revogado — reconecte sua agenda", e);
+            return new GoogleAuthError(
+                    GoogleAuthErrorCode.REVOKED,
+                    "Token Google revogado — reconecte sua agenda", e);
         }
-        return new GoogleAuthError("Falha na autenticação Google: " + (detail != null ? detail : e.getMessage()), e);
+        return new GoogleAuthError(
+                GoogleAuthErrorCode.AUTH_FAILED,
+                "Falha na autenticação Google: " + (detail != null ? detail : e.getMessage()), e);
     }
 }
+

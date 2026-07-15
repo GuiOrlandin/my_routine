@@ -2,6 +2,7 @@ package com.myroutine.api.controller;
 
 import com.myroutine.api.dto.GoogleConnectRequest;
 import com.myroutine.api.dto.GoogleConnectResponse;
+import com.myroutine.api.dto.GoogleSyncResponse;
 import com.myroutine.api.security.UserPrincipal;
 import com.myroutine.integration.GoogleCalendarPort;
 import jakarta.validation.Valid;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Endpoints de integração Google Calendar (OAuth + sync).
  *
- * <p>Auth: JWT Supabase via {@link AuthenticationPrincipal}; a troca code→token fica em {@link GoogleCalendarPort}.
+ * <p>Auth: JWT Supabase via {@link AuthenticationPrincipal}; connect/sync ficam em {@link GoogleCalendarPort}.
  */
 @RestController
 @RequestMapping("/google")
@@ -34,5 +35,14 @@ public class GoogleController {
             @AuthenticationPrincipal UserPrincipal user) {
         googleCalendarPort.connect(user.getId(), request.code());
         return ResponseEntity.status(HttpStatus.OK).body(GoogleConnectResponse.ofConnected());
+    }
+
+    /**
+     * Dispara sync manual Google Calendar → lembretes ({@code source=google}).
+     */
+    @PostMapping("/sync")
+    public ResponseEntity<GoogleSyncResponse> sync(@AuthenticationPrincipal UserPrincipal user) {
+        int syncedCount = googleCalendarPort.syncEvents(user.getId());
+        return ResponseEntity.ok(new GoogleSyncResponse(syncedCount));
     }
 }

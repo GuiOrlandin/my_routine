@@ -240,13 +240,12 @@ public class SupabaseReminderRepository implements ReminderRepository {
     }
 
     private SavedReminder updateGoogleEvent(UUID id, Reminder reminder, String externalId) {
+        // Sync Google: só title/due_at (fonte Google). status e recurrence permanecem locais.
         Map<String, Object> payload = new HashMap<>();
         payload.put("title", reminder.getTitle());
         payload.put("due_at", reminder.getDueAt().toString());
-        payload.put("status", reminder.getStatus().getValue());
         payload.put("source", "google");
         payload.put("external_id", externalId);
-        payload.put("recurrence", toDbRecurrence(reminder.getRecurrence()));
         payload.put("updated_at", Instant.now().toString());
 
         List<ReminderRow> rows = supabaseClient.patch()

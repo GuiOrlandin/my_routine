@@ -1,0 +1,13 @@
+target/
+.agents/
+docs/
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+*.md
+!README.md
+skills-lock.json
+test-*.txt
+**/.DS_Store

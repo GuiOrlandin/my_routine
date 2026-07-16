@@ -511,7 +511,7 @@ curl -X POST http://localhost:8080/reminders -H "Authorization: Bearer <token>" 
 
 ---
 
-### T20: Deploy Spring Boot no Render
+### T20: Deploy Spring Boot no Render — ⚠️ Parcial (Blueprint/Dockerfile/README ✅, deploy dashboard pendente)
 
 **What**: Deploy da API no Render free tier (JAR) com variáveis de ambiente e README de produção.
 **Where**: `backend/render.yaml`, `backend/README.md`
@@ -524,10 +524,11 @@ curl -X POST http://localhost:8080/reminders -H "Authorization: Bearer <token>" 
 - Skill: `render-deploy`
 
 **Done when**:
-- [ ] API acessível em URL pública `https://*.onrender.com`
-- [ ] `GET /health` responde em produção
-- [ ] Variáveis de ambiente configuradas no Render
-- [ ] README documenta cold start (~30s) e como rodar local (`mvn spring-boot:run`)
+- [ ] API acessível em URL pública `https://*.onrender.com` *(Blueprint Path: `backend/render.yaml` — conectar no Dashboard Render)*
+- [ ] `GET /health` responde em produção *(após create do serviço)*
+- [x] Variáveis de ambiente declaradas no `render.yaml` (`sync: false` — preencher no Dashboard)
+- [x] README documenta cold start (~30s) e como rodar local (`mvn spring-boot:run`)
+- [x] `Dockerfile` multi-stage empacota JAR; `application.yml` usa `PORT`
 
 **Tests**: manual (gate)
 **Gate**: manual — curl na URL de produção

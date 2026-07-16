@@ -1,0 +1,27 @@
+# Blueprint Render — API Spring Boot (JAR via Docker)
+# Dashboard: New → Blueprint → Blueprint Path: backend/render.yaml
+# Depois preencha as env vars com sync: false (valores iguais a .env.example)
+
+services:
+  - type: web
+    name: my-routine-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: GOOGLE_TOKEN_ENCRYPTION_KEY
+        sync: false

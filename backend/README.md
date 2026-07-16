@@ -24,6 +24,36 @@ Build e testes:
 mvn clean test
 ```
 
+## Deploy no Render (free tier)
+
+A API sobe como **web service Docker** que empacota o JAR Spring Boot (`Dockerfile` + `render.yaml`). Java não tem runtime nativo no Render — o container é o caminho suportado.
+
+### Passos
+
+1. Push do repositório no GitHub (já conectado ao Render).
+2. No [Dashboard Render](https://dashboard.render.com): **New → Blueprint**.
+3. Selecione o repo e informe **Blueprint Path:** `backend/render.yaml`.
+4. Preencha as variáveis marcadas `sync: false` (mesmos nomes de `.env.example`):
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`
+   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_TOKEN_ENCRYPTION_KEY`
+   - `GOOGLE_REDIRECT_URI` → `https://<seu-servico>.onrender.com/google/callback` (também autorizar no Google Cloud Console)
+5. Após o deploy: `curl https://<seu-servico>.onrender.com/health` → `{"status":"ok"}`.
+
+Validação local da imagem (opcional):
+
+```bash
+cd backend
+docker build -t my-routine-api .
+docker run --rm -p 8080:8080 -e PORT=8080 my-routine-api
+curl http://localhost:8080/health
+```
+
+### Cold start (~30s)
+
+No **free tier**, o serviço **hiberna após ~15 min** sem tráfego. A primeira requisição depois disso leva cerca de **30–60 segundos** enquanto o container sobe de novo — comportamento esperado, não um erro da API. O app mobile (T35) deve mostrar mensagem amigável nesse caso.
+
+`PORT` é injetado pelo Render; a app usa `server.port=${PORT:8080}` em `application.yml`.
+
 ## Estrutura de pacotes
 
 O back-end segue **Programação Orientada a Objetos** e **SOLID** com camadas separadas.
